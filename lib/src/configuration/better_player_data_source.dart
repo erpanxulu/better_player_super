@@ -106,10 +106,54 @@ class BetterPlayerDataSource {
     this.srtConfiguration,
   }) : assert(
             (type == BetterPlayerDataSourceType.network ||
-                    type == BetterPlayerDataSourceType.file) ||
+                    type == BetterPlayerDataSourceType.file ||
+                    type == BetterPlayerDataSourceType.srt) ||
                 (type == BetterPlayerDataSourceType.memory &&
                     bytes?.isNotEmpty == true),
-            "Url can't be null in network or file data source | bytes can't be null when using memory data source");
+            "Url can't be null in network, file, or srt data source | bytes can't be null when using memory data source");
+
+  ///Factory method to build SRT data source which uses url as data source
+  ///Bytes parameter is not used in this data source.
+  factory BetterPlayerDataSource.srt(
+    String url, {
+    List<BetterPlayerSubtitlesSource>? subtitles,
+    bool? liveStream,
+    Map<String, String>? headers,
+    bool? useAsmsSubtitles,
+    bool? useAsmsTracks,
+    bool? useAsmsAudioTracks,
+    Map<String, String>? qualities,
+    BetterPlayerCacheConfiguration? cacheConfiguration,
+    BetterPlayerNotificationConfiguration notificationConfiguration =
+        const BetterPlayerNotificationConfiguration(showNotification: false),
+    Duration? overriddenDuration,
+    BetterPlayerVideoFormat? videoFormat,
+    BetterPlayerDrmConfiguration? drmConfiguration,
+    Widget? placeholder,
+    BetterPlayerBufferingConfiguration bufferingConfiguration =
+        const BetterPlayerBufferingConfiguration(),
+    BetterPlayerSrtConfiguration? srtConfiguration,
+  }) {
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.srt,
+      url,
+      subtitles: subtitles,
+      liveStream: liveStream,
+      headers: headers,
+      useAsmsSubtitles: useAsmsSubtitles,
+      useAsmsTracks: useAsmsTracks,
+      useAsmsAudioTracks: useAsmsAudioTracks,
+      resolutions: qualities,
+      cacheConfiguration: cacheConfiguration,
+      notificationConfiguration: notificationConfiguration,
+      overriddenDuration: overriddenDuration,
+      videoFormat: videoFormat,
+      drmConfiguration: drmConfiguration,
+      placeholder: placeholder,
+      bufferingConfiguration: bufferingConfiguration,
+      srtConfiguration: srtConfiguration,
+    );
+  }
 
   ///Factory method to build network data source which uses url as data source
   ///Bytes parameter is not used in this data source.
