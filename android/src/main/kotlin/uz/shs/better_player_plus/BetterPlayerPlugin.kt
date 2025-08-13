@@ -283,7 +283,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 0L,
                 overriddenDuration.toLong(),
                 null,
-                null, null, null
+                null, null, null,
+                null // srtConfiguration - not needed for assets
             )
         } else {
             val useCache = getParameter(dataSource, USE_CACHE_PARAMETER, false)
