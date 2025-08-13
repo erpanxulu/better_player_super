@@ -60,7 +60,7 @@ android {
         implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
         implementation "androidx.media3:media3-datasource-cronet:$media3_version"
         implementation "androidx.media3:media3-exoplayer-smoothstreaming:$media3_version"
-        implementation "io.github.thibaultbee:srtdroid:1.8.4"
+        implementation "io.github.thibaultbee.srtdroid:srtdroid-core:1.8.4"
 
         implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
         implementation "androidx.lifecycle:lifecycle-common:$lifecycleVersion"
