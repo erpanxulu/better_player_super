@@ -398,7 +398,7 @@ internal class BetterPlayer(
 
     private fun buildMediaSource(
         uri: Uri,
-        mediaDataSourceFactory: DataSource.Factory,
+        mediaDataSourceFactory: DataSource.Factory?,
         formatHint: String?,
         cacheKey: String?,
         context: Context,
@@ -433,30 +433,39 @@ internal class BetterPlayer(
         }
 
         return when (type) {
-            C.CONTENT_TYPE_SS -> SsMediaSource.Factory(
-                DefaultSsChunkSource.Factory(mediaDataSourceFactory),
-                DefaultDataSource.Factory(context, mediaDataSourceFactory)
-            ).apply {
-                if (drmSessionManagerProvider != null) {
-                    setDrmSessionManagerProvider(drmSessionManagerProvider!!)
-                }
-            }.createMediaSource(mediaItem)
-
-            C.CONTENT_TYPE_DASH -> DashMediaSource.Factory(
-                DefaultDashChunkSource.Factory(mediaDataSourceFactory),
-                DefaultDataSource.Factory(context, mediaDataSourceFactory)
-            ).apply {
-                if (drmSessionManagerProvider != null) {
-                    setDrmSessionManagerProvider(drmSessionManagerProvider!!)
-                }
-            }.createMediaSource(mediaItem)
-
-            C.CONTENT_TYPE_HLS -> HlsMediaSource.Factory(mediaDataSourceFactory)
-                .apply {
+            C.CONTENT_TYPE_SS -> {
+                requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for SS content type" }
+                SsMediaSource.Factory(
+                    DefaultSsChunkSource.Factory(mediaDataSourceFactory),
+                    DefaultDataSource.Factory(context, mediaDataSourceFactory)
+                ).apply {
                     if (drmSessionManagerProvider != null) {
                         setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                     }
                 }.createMediaSource(mediaItem)
+            }
+
+            C.CONTENT_TYPE_DASH -> {
+                requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for DASH content type" }
+                DashMediaSource.Factory(
+                    DefaultDashChunkSource.Factory(mediaDataSourceFactory),
+                    DefaultDataSource.Factory(context, mediaDataSourceFactory)
+                ).apply {
+                    if (drmSessionManagerProvider != null) {
+                        setDrmSessionManagerProvider(drmSessionManagerProvider!!)
+                    }
+                }.createMediaSource(mediaItem)
+            }
+
+            C.CONTENT_TYPE_HLS -> {
+                requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for HLS content type" }
+                HlsMediaSource.Factory(mediaDataSourceFactory)
+                    .apply {
+                        if (drmSessionManagerProvider != null) {
+                            setDrmSessionManagerProvider(drmSessionManagerProvider!!)
+                        }
+                    }.createMediaSource(mediaItem)
+            }
 
             CONTENT_TYPE_SRT -> ProgressiveMediaSource.Factory(
                 SrtDataSourceFactory(srtConfiguration),
@@ -467,14 +476,17 @@ internal class BetterPlayer(
                 }
             }.createMediaSource(mediaItem)
 
-            C.CONTENT_TYPE_OTHER -> ProgressiveMediaSource.Factory(
-                mediaDataSourceFactory,
-                DefaultExtractorsFactory()
-            ).apply {
-                if (drmSessionManagerProvider != null) {
-                    setDrmSessionManagerProvider(drmSessionManagerProvider!!)
-                }
-            }.createMediaSource(mediaItem)
+            C.CONTENT_TYPE_OTHER -> {
+                requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for OTHER content type" }
+                ProgressiveMediaSource.Factory(
+                    mediaDataSourceFactory,
+                    DefaultExtractorsFactory()
+                ).apply {
+                    if (drmSessionManagerProvider != null) {
+                        setDrmSessionManagerProvider(drmSessionManagerProvider!!)
+                    }
+                }.createMediaSource(mediaItem)
+            }
 
             else -> {
                 throw IllegalStateException("Unsupported type: $type")
