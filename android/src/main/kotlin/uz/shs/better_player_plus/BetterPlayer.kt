@@ -198,7 +198,12 @@ internal class BetterPlayer(
             Log.d(TAG, "SRT configuration: $srtConfiguration")
         }
         
-        if (isHTTP(uri)) {
+        // PENTING: Handle SRT URLs specially
+        if (formatHint == FORMAT_SRT) {
+            // For SRT, we don't need to set dataSourceFactory here
+            // It will be handled in buildMediaSource with SrtDataSourceFactory
+            dataSourceFactory = null
+        } else if (isHTTP(uri)) {
             dataSourceFactory = getDataSourceFactory(userAgent, headers)
             if (useCache && maxCacheSize > 0 && maxCacheFileSize > 0) {
                 dataSourceFactory = CacheDataSourceFactory(
