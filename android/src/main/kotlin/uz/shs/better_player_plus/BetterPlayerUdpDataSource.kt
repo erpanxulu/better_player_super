@@ -41,12 +41,8 @@ class BetterPlayerUdpDataSource(
      */
     fun buildUdpMediaSource(url: String): MediaSource {
         val udpFactory = DataSource.Factory {
-            UdpDataSource(maxPacketSize).apply {
-                setConnectionTimeoutMs(connectionTimeout.toLong())
-                setReadTimeoutMs(connectionTimeout.toLong())
-            }
+            UdpDataSource(maxPacketSize)
         }
-
         val tsExtractor = DefaultExtractorsFactory()
             .setTsExtractorFlags(
                 DefaultTsPayloadReaderFactory.FLAG_ALLOW_NON_IDR_KEYFRAMES

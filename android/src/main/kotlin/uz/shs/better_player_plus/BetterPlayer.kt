@@ -499,20 +499,10 @@ internal class BetterPlayer(
                     ttl = udpConfiguration?.get("ttl") as? Int ?: 1,
                     enableBroadcast = udpConfiguration?.get("enableBroadcast") as? Boolean ?: false
                 )
-                
-                // Check if multicast and acquire lock
                 if (udpDataSource.isMulticastUrl(uri.toString())) {
                     udpDataSource.acquireMulticastLock()
                 }
-                
-                ProgressiveMediaSource.Factory(
-                    DataSource.Factory { udpDataSource.buildUdpMediaSource(uri.toString()) },
-                    DefaultExtractorsFactory()
-                ).apply {
-                    if (drmSessionManagerProvider != null) {
-                        setDrmSessionManagerProvider(drmSessionManagerProvider!!)
-                    }
-                }.createMediaSource(mediaItem)
+                udpDataSource.buildUdpMediaSource(uri.toString())
             }
 
             C.CONTENT_TYPE_OTHER -> {
