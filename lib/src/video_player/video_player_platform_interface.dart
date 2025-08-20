@@ -8,6 +8,7 @@ import 'dart:async';
 // Flutter imports:
 import 'package:better_player_plus/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_srt_configuration.dart';
+import 'package:better_player_plus/src/configuration/better_player_udp_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_video_format.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -230,6 +231,7 @@ class DataSource {
     this.clearKey,
     this.videoExtension,
     this.srtConfiguration,
+    this.udpConfiguration,
   }) : assert(uri == null || asset == null);
 
   /// Describes the type of data source this [VideoPlayerController]
@@ -313,6 +315,9 @@ class DataSource {
   ///SRT-specific configuration for SRT streaming
   final BetterPlayerSrtConfiguration? srtConfiguration;
 
+  ///UDP-specific configuration for UDP streaming
+  final BetterPlayerUdpConfiguration? udpConfiguration;
+
   /// Key to compare DataSource
   String get key {
     String? result = "";
@@ -357,7 +362,10 @@ enum DataSourceType {
   file,
 
   /// The video was loaded from a SRT file.
-  srt
+  srt,
+
+  /// The video was loaded from a UDP stream.
+  udp
 }
 
 /// The file format of the given video.
