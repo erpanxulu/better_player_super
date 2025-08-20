@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:better_player_plus/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_srt_configuration.dart';
+import 'package:better_player_plus/src/configuration/better_player_udp_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_video_format.dart';
 import 'package:better_player_plus/src/video_player/video_player_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -421,6 +422,39 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         overriddenDuration: overriddenDuration,
         activityName: activityName,
         srtConfiguration: srtConfiguration,
+      ),
+    );
+  }
+
+  /// Set data source for playing a video from UDP (User Datagram Protocol) stream.
+  ///
+  /// The UDP URL for the video is given by the [dataSource] argument and must not be
+  /// null. UDP URLs typically start with 'udp://' or 'udp://host:port'.
+  Future<void> setUdpDataSource(
+    String dataSource, {
+    Map<String, String?>? headers,
+    bool? showNotification,
+    String? title,
+    String? author,
+    String? imageUrl,
+    String? notificationChannelName,
+    Duration? overriddenDuration,
+    String? activityName,
+    BetterPlayerUdpConfiguration? udpConfiguration,
+  }) {
+    return _setDataSource(
+      DataSource(
+        sourceType: DataSourceType.udp,
+        uri: dataSource,
+        headers: headers,
+        showNotification: showNotification,
+        title: title,
+        author: author,
+        imageUrl: imageUrl,
+        notificationChannelName: notificationChannelName,
+        overriddenDuration: overriddenDuration,
+        activityName: activityName,
+        udpConfiguration: udpConfiguration,
       ),
     );
   }

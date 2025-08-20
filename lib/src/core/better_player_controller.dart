@@ -518,6 +518,25 @@ class BetterPlayerController {
         );
         break;
 
+      case BetterPlayerDataSourceType.udp:
+        await videoPlayerController?.setUdpDataSource(
+          betterPlayerDataSource.url,
+          headers: _getHeaders(),
+          showNotification: _betterPlayerDataSource
+              ?.notificationConfiguration?.showNotification,
+          title: _betterPlayerDataSource?.notificationConfiguration?.title,
+          author: _betterPlayerDataSource?.notificationConfiguration?.author,
+          imageUrl:
+              _betterPlayerDataSource?.notificationConfiguration?.imageUrl,
+          notificationChannelName: _betterPlayerDataSource
+              ?.notificationConfiguration?.notificationChannelName,
+          overriddenDuration: _betterPlayerDataSource!.overriddenDuration,
+          activityName:
+              _betterPlayerDataSource?.notificationConfiguration?.activityName,
+          udpConfiguration: _betterPlayerDataSource!.udpConfiguration,
+        );
+        break;
+
       case BetterPlayerDataSourceType.memory:
         final file = await _createFile(_betterPlayerDataSource!.bytes!,
             extension: _betterPlayerDataSource!.videoExtension);
