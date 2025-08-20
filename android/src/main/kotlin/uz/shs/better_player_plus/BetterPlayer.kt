@@ -137,7 +137,8 @@ internal class BetterPlayer(
         drmHeaders: Map<String, String>?,
         cacheKey: String?,
         clearKey: String?,
-        srtConfiguration: Map<String, Any?>?
+        srtConfiguration: Map<String, Any?>?,
+        udpConfiguration: Map<String, Any?>?
     ) {
         this.key = key
         isInitialized = false
@@ -198,10 +199,19 @@ internal class BetterPlayer(
             Log.d(TAG, "SRT configuration: $srtConfiguration")
         }
         
+        // Handle UDP configuration
+        if (formatHint == FORMAT_UDP && udpConfiguration != null) {
+            Log.d(TAG, "UDP configuration: $udpConfiguration")
+        }
+        
         // PENTING: Handle SRT URLs specially
         if (formatHint == FORMAT_SRT) {
             // For SRT, we don't need to set dataSourceFactory here
             // It will be handled in buildMediaSource with SrtDataSourceFactory
+            dataSourceFactory = null
+        } else if (formatHint == FORMAT_UDP) {
+            // For UDP, we don't need to set dataSourceFactory here
+            // It will be handled in buildMediaSource with BetterPlayerUdpDataSource
             dataSourceFactory = null
         } else if (isHTTP(uri)) {
             dataSourceFactory = getDataSourceFactory(userAgent, headers)
@@ -216,7 +226,7 @@ internal class BetterPlayer(
         } else {
             dataSourceFactory = DefaultDataSource.Factory(context)
         }
-        val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context, srtConfiguration)
+        val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context, srtConfiguration, udpConfiguration)
         if (overriddenDuration != 0L) {
             val clippingMediaSource = ClippingMediaSource(mediaSource, 0, overriddenDuration * 1000)
             exoPlayer?.setMediaSource(clippingMediaSource)
@@ -402,7 +412,8 @@ internal class BetterPlayer(
         formatHint: String?,
         cacheKey: String?,
         context: Context,
-        srtConfiguration: Map<String, Any?>? = null
+        srtConfiguration: Map<String, Any?>? = null,
+        udpConfiguration: Map<String, Any?>? = null
     ): MediaSource {
         val type: Int
         if (formatHint == null) {
@@ -417,6 +428,7 @@ internal class BetterPlayer(
                 FORMAT_DASH -> C.CONTENT_TYPE_DASH
                 FORMAT_HLS -> C.CONTENT_TYPE_HLS
                 FORMAT_SRT -> CONTENT_TYPE_SRT
+                FORMAT_UDP -> CONTENT_TYPE_UDP
                 FORMAT_OTHER -> C.CONTENT_TYPE_OTHER
                 else -> -1
             }
@@ -475,6 +487,33 @@ internal class BetterPlayer(
                     setDrmSessionManagerProvider(drmSessionManagerProvider!!)
                 }
             }.createMediaSource(mediaItem)
+
+            CONTENT_TYPE_UDP -> {
+                val udpDataSource = BetterPlayerUdpDataSource(
+                    context = context,
+                    maxPacketSize = udpConfiguration?.get("maxPacketSize") as? Int ?: 65536,
+                    connectionTimeout = udpConfiguration?.get("connectionTimeout") as? Int ?: 10000,
+                    bufferSize = udpConfiguration?.get("bufferSize") as? Int ?: 1024 * 1024,
+                    enableMulticast = udpConfiguration?.get("enableMulticast") as? Boolean ?: true,
+                    networkInterface = udpConfiguration?.get("networkInterface") as? String,
+                    ttl = udpConfiguration?.get("ttl") as? Int ?: 1,
+                    enableBroadcast = udpConfiguration?.get("enableBroadcast") as? Boolean ?: false
+                )
+                
+                // Check if multicast and acquire lock
+                if (udpDataSource.isMulticastUrl(uri.toString())) {
+                    udpDataSource.acquireMulticastLock()
+                }
+                
+                ProgressiveMediaSource.Factory(
+                    DataSource.Factory { udpDataSource.buildUdpMediaSource(uri.toString()) },
+                    DefaultExtractorsFactory()
+                ).apply {
+                    if (drmSessionManagerProvider != null) {
+                        setDrmSessionManagerProvider(drmSessionManagerProvider!!)
+                    }
+                }.createMediaSource(mediaItem)
+            }
 
             C.CONTENT_TYPE_OTHER -> {
                 requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for OTHER content type" }
@@ -820,6 +859,7 @@ internal class BetterPlayer(
         private const val FORMAT_DASH = "dash"
         private const val FORMAT_HLS = "hls"
         private const val FORMAT_SRT = "srt"
+    private const val FORMAT_UDP = "udp"
         private const val FORMAT_OTHER = "other"
         private const val DEFAULT_NOTIFICATION_CHANNEL = "better_player_channel"
         private const val NOTIFICATION_ID = 1
@@ -892,6 +932,7 @@ internal class BetterPlayer(
 
         // Custom content type for SRT since Media3 doesn't have one built-in
         private const val CONTENT_TYPE_SRT = 100
+    private const val CONTENT_TYPE_UDP = 101
     }
 
 }

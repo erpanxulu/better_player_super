@@ -77,6 +77,8 @@ This plugin is based on [Chewie](https://github.com/brianegan/chewie). Chewie is
 ✔️ Playback speed support  
 ✔️ HLS support (track, subtitles (also segmented), audio track selection)  
 ✔️ DASH support (track, subtitles, audio track selection)     
+✔️ SRT support (Secure Reliable Transport streaming)  
+✔️ UDP support (User Datagram Protocol streaming with multicast)  
 ✔️ Alternative resolution support  
 ✔️ Cache support  
 ✔️ Notifications support  
@@ -101,6 +103,7 @@ some feature which is supported by other players available in pub dev, then feel
 - **HLS support**: Full HLS streaming support with adaptive bitrate
 - **DASH support**: DASH streaming support
 - **SRT support**: Secure Reliable Transport streaming support for low-latency video
+- **UDP support**: User Datagram Protocol streaming with multicast support
 - **Subtitles**: Multiple subtitle formats support
 - **DRM**: Widevine, PlayReady, ClearKey DRM support
 - **Cache**: Video caching for better performance

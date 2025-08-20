@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.0.7
+
+### Added
+- **UDP Streaming Support**: Added support for UDP (User Datagram Protocol) streaming protocol
+  - New `BetterPlayerDataSourceType.udp` for UDP data sources
+  - New `BetterPlayerUdpConfiguration` class with comprehensive UDP parameters
+  - Android implementation using Media3 ExoPlayer with UdpDataSource
+  - Automatic multicast detection and support
+  - Transport Stream (TS) format support with custom extractors
+  - WiFi multicast lock management for Android
+  - Example UDP player page in the example app
+  - Comprehensive UDP documentation and configuration guide
+
+### Features
+- UDP protocol support for low-latency video streaming
+- Multicast streaming support with automatic TTL configuration
+- Configurable UDP parameters including packet size, timeouts, and buffer sizes
+- Support for UDP URLs (udp://host:port)
+- Network interface selection for multicast streams
+- Broadcast streaming support
+- Backward compatibility with existing video sources
+- Platform-specific optimizations for Android and iOS
+
+### Documentation
+- Added UDP streaming documentation (`doc/udp_streaming.md`)
+- Updated example app with UDP player page
+- Comprehensive configuration parameter documentation
+
 ## 1.0.6
 
 ### Added
@@ -19,7 +47,7 @@
 ### Features
 - SRT protocol support for low-latency video streaming
 - Configurable SRT parameters including connection timeouts, buffer sizes, and network settings
-- Support for SRT URLs (srt://host:port)
+- Support for SRT URLs (srt://host:pt)
 - Backward compatibility with existing video sources
 - Platform-specific optimizations for Android and iOS
 

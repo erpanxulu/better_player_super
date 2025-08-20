@@ -28,6 +28,7 @@ import 'package:better_player_example/pages/reusable_video_list/reusable_video_l
 import 'package:better_player_example/pages/rotation_and_fit_page.dart';
 import 'package:better_player_example/pages/subtitles_page.dart';
 import 'package:better_player_example/pages/srt_player_page.dart';
+import 'package:better_player_example/pages/udp_player_page.dart';
 import 'package:better_player_example/pages/video_list/video_list_page.dart';
 import 'package:better_player_example/pages/picture_in_picture_page.dart';
 import 'package:flutter/material.dart';
@@ -165,6 +166,9 @@ class _WelcomePageState extends State<WelcomePage> {
       }),
       _buildExampleElementWidget("SRT Player", () {
         _navigateToPage(SrtPlayerPage());
+      }),
+      _buildExampleElementWidget("UDP Stream Player", () {
+        _navigateToPage(UdpPlayerPage());
       }),
     ];
   }

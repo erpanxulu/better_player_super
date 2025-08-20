@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 
 import 'better_player_cache_configuration.dart';
 import 'better_player_srt_configuration.dart';
+import 'better_player_udp_configuration.dart';
 
 ///Representation of data source which will be played in Better Player. Allows
 ///to setup all necessary configuration connected to video source.
@@ -80,6 +81,9 @@ class BetterPlayerDataSource {
   ///SRT-specific configuration for SRT streaming
   final BetterPlayerSrtConfiguration? srtConfiguration;
 
+  ///UDP-specific configuration for UDP streaming
+  final BetterPlayerUdpConfiguration? udpConfiguration;
+
   BetterPlayerDataSource(
     this.type,
     this.url, {
@@ -104,13 +108,15 @@ class BetterPlayerDataSource {
     this.placeholder,
     this.bufferingConfiguration = const BetterPlayerBufferingConfiguration(),
     this.srtConfiguration,
+    this.udpConfiguration,
   }) : assert(
             (type == BetterPlayerDataSourceType.network ||
                     type == BetterPlayerDataSourceType.file ||
-                    type == BetterPlayerDataSourceType.srt) ||
+                    type == BetterPlayerDataSourceType.srt ||
+                    type == BetterPlayerDataSourceType.udp) ||
                 (type == BetterPlayerDataSourceType.memory &&
                     bytes?.isNotEmpty == true),
-            "Url can't be null in network, file, or srt data source | bytes can't be null when using memory data source");
+            "Url can't be null in network, file, srt, or udp data source | bytes can't be null when using memory data source");
 
   ///Factory method to build SRT data source which uses url as data source
   ///Bytes parameter is not used in this data source.
@@ -152,6 +158,49 @@ class BetterPlayerDataSource {
       placeholder: placeholder,
       bufferingConfiguration: bufferingConfiguration,
       srtConfiguration: srtConfiguration,
+    );
+  }
+
+  ///Factory method to build UDP data source which uses url as data source
+  ///Bytes parameter is not used in this data source.
+  factory BetterPlayerDataSource.udp(
+    String url, {
+    List<BetterPlayerSubtitlesSource>? subtitles,
+    bool? liveStream,
+    Map<String, String>? headers,
+    bool? useAsmsSubtitles,
+    bool? useAsmsTracks,
+    bool? useAsmsAudioTracks,
+    Map<String, String>? qualities,
+    BetterPlayerCacheConfiguration? cacheConfiguration,
+    BetterPlayerNotificationConfiguration notificationConfiguration =
+        const BetterPlayerNotificationConfiguration(showNotification: false),
+    Duration? overriddenDuration,
+    BetterPlayerVideoFormat? videoFormat,
+    BetterPlayerDrmConfiguration? drmConfiguration,
+    Widget? placeholder,
+    BetterPlayerBufferingConfiguration bufferingConfiguration =
+        const BetterPlayerBufferingConfiguration(),
+    BetterPlayerUdpConfiguration? udpConfiguration,
+  }) {
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.udp,
+      url,
+      subtitles: subtitles,
+      liveStream: liveStream,
+      headers: headers,
+      useAsmsSubtitles: useAsmsSubtitles,
+      useAsmsTracks: useAsmsTracks,
+      useAsmsAudioTracks: useAsmsAudioTracks,
+      resolutions: qualities,
+      cacheConfiguration: cacheConfiguration,
+      notificationConfiguration: notificationConfiguration,
+      overriddenDuration: overriddenDuration,
+      videoFormat: videoFormat,
+      drmConfiguration: drmConfiguration,
+      placeholder: placeholder,
+      bufferingConfiguration: bufferingConfiguration,
+      udpConfiguration: udpConfiguration,
     );
   }
 

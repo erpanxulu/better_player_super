@@ -304,6 +304,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             // Handle SRT configuration if present
             val srtConfiguration = dataSource[SRT_CONFIGURATION_PARAMETER] as? Map<String, Any?>
             
+            // Handle UDP configuration if present
+            val udpConfiguration = dataSource[UDP_CONFIGURATION_PARAMETER] as? Map<String, Any?>
+            
             player.setDataSource(
                 flutterState!!.applicationContext,
                 key,
@@ -319,7 +322,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 drmHeaders,
                 cacheKey,
                 clearKey,
-                srtConfiguration
+                srtConfiguration,
+                udpConfiguration
             )
         }
     }
@@ -547,6 +551,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val DRM_CLEARKEY_PARAMETER = "clearKey"
         private const val MIX_WITH_OTHERS_PARAMETER = "mixWithOthers"
         private const val SRT_CONFIGURATION_PARAMETER = "srtConfiguration"
+    private const val UDP_CONFIGURATION_PARAMETER = "udpConfiguration"
         const val URL_PARAMETER = "url"
         const val PRE_CACHE_SIZE_PARAMETER = "preCacheSize"
         const val MAX_CACHE_SIZE_PARAMETER = "maxCacheSize"
