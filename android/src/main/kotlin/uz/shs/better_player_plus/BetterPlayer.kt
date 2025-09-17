@@ -214,9 +214,7 @@ internal class BetterPlayer(
             // It will be handled in buildMediaSource with BetterPlayerUdpDataSource
             dataSourceFactory = null
         } else if (isHTTP(uri)) {
-            // Use regular data source factory for HTTP/HTTPS URLs
             dataSourceFactory = getDataSourceFactory(userAgent, headers)
-            
             if (useCache && maxCacheSize > 0 && maxCacheFileSize > 0) {
                 dataSourceFactory = CacheDataSourceFactory(
                     context,
@@ -419,31 +417,11 @@ internal class BetterPlayer(
     ): MediaSource {
         val type: Int
         if (formatHint == null) {
-            // Auto-detect HTTP/HTTPS URLs and force OTHER format for regular playback
-            if (uri.scheme == "https" || uri.scheme == "http") {
-                // Check if this looks like a streaming URL (no file extension)
-                val lastPathSegment = uri.lastPathSegment ?: ""
-                if (!lastPathSegment.contains(".") || lastPathSegment.endsWith("/")) {
-                    Log.d(TAG, "Auto-detecting HTTP/HTTPS URL as OTHER format for regular playback: ${uri.toString()}")
-                    type = C.CONTENT_TYPE_OTHER
-                } else {
-                    // Has file extension, use normal detection
-                    type = Util.inferContentTypeForExtension(lastPathSegment.split(".").last())
-                }
-            } else {
-                var lastPathSegment = uri.lastPathSegment
-                if (lastPathSegment == null) {
-                    lastPathSegment = ""
-                }
-                // Check if URL has file extension
-                if (lastPathSegment.contains(".")) {
-                    type = Util.inferContentTypeForExtension(lastPathSegment.split(".")[1])
-                } else {
-                    // If no extension and not HTTP/HTTPS, default to OTHER
-                    Log.d(TAG, "No file extension found, defaulting to OTHER content type: ${uri.toString()}")
-                    type = C.CONTENT_TYPE_OTHER
-                }
+            var lastPathSegment = uri.lastPathSegment
+            if (lastPathSegment == null) {
+                lastPathSegment = ""
             }
+            type = Util.inferContentTypeForExtension(lastPathSegment.split(".")[1])
         } else {
             type = when (formatHint) {
                 FORMAT_SS -> C.CONTENT_TYPE_SS
