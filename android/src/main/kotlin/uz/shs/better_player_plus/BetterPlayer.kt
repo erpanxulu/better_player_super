@@ -18,7 +18,6 @@ import android.support.v4.media.session.PlaybackStateCompat
 import uz.shs.better_player_plus.DataSourceUtils.getUserAgent
 import uz.shs.better_player_plus.DataSourceUtils.isHTTP
 import uz.shs.better_player_plus.DataSourceUtils.getDataSourceFactory
-import uz.shs.better_player_plus.DataSourceUtils.getDataSourceFactoryWithHlsDefaults
 import io.flutter.plugin.common.EventChannel
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry
 import io.flutter.plugin.common.MethodChannel
@@ -215,15 +214,8 @@ internal class BetterPlayer(
             // It will be handled in buildMediaSource with BetterPlayerUdpDataSource
             dataSourceFactory = null
         } else if (isHTTP(uri)) {
-            // Check if this is a streaming URL that should use HLS defaults
-            val lastPathSegment = uri.lastPathSegment ?: ""
-            val isStreamingUrl = !lastPathSegment.contains(".") || lastPathSegment.endsWith("/")
-            
-            if (isStreamingUrl) {
-                dataSourceFactory = getDataSourceFactoryWithHlsDefaults(userAgent, headers, uri)
-            } else {
-                dataSourceFactory = getDataSourceFactory(userAgent, headers)
-            }
+            // Use regular data source factory for HTTP/HTTPS URLs
+            dataSourceFactory = getDataSourceFactory(userAgent, headers)
             
             if (useCache && maxCacheSize > 0 && maxCacheFileSize > 0) {
                 dataSourceFactory = CacheDataSourceFactory(
@@ -427,13 +419,13 @@ internal class BetterPlayer(
     ): MediaSource {
         val type: Int
         if (formatHint == null) {
-            // Auto-detect HTTP/HTTPS URLs and force HLS format for streaming URLs
+            // Auto-detect HTTP/HTTPS URLs and force OTHER format for regular playback
             if (uri.scheme == "https" || uri.scheme == "http") {
                 // Check if this looks like a streaming URL (no file extension)
                 val lastPathSegment = uri.lastPathSegment ?: ""
                 if (!lastPathSegment.contains(".") || lastPathSegment.endsWith("/")) {
-                    Log.d(TAG, "Auto-detecting HTTP/HTTPS streaming URL as HLS: ${uri.toString()}")
-                    type = C.CONTENT_TYPE_HLS
+                    Log.d(TAG, "Auto-detecting HTTP/HTTPS URL as OTHER format for regular playback: ${uri.toString()}")
+                    type = C.CONTENT_TYPE_OTHER
                 } else {
                     // Has file extension, use normal detection
                     type = Util.inferContentTypeForExtension(lastPathSegment.split(".").last())
