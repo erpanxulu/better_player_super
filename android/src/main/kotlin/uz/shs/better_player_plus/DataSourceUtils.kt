@@ -43,6 +43,44 @@ internal object DataSourceUtils {
     }
 
     @JvmStatic
+    fun getDataSourceFactoryWithHlsDefaults(
+        userAgent: String?,
+        headers: Map<String, String>?,
+        uri: Uri?
+    ): DataSource.Factory {
+        val dataSourceFactory: DataSource.Factory = DefaultHttpDataSource.Factory()
+            .setUserAgent(userAgent ?: "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36")
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS)
+            .setReadTimeoutMs(DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS)
+        
+        val notNullHeaders = mutableMapOf<String, String>()
+        
+        // Add default HLS headers
+        notNullHeaders["Accept"] = "application/vnd.apple.mpegurl, application/x-mpegURL, application/octet-stream, */*"
+        notNullHeaders["Accept-Encoding"] = "identity"
+        notNullHeaders["Connection"] = "keep-alive"
+        
+        // Add referer if it's a streaming URL
+        if (uri != null && (uri.scheme == "https" || uri.scheme == "http")) {
+            val host = uri.host
+            if (host != null) {
+                notNullHeaders["Referer"] = "${uri.scheme}://$host/"
+            }
+        }
+        
+        // Add custom headers if provided
+        if (headers != null) {
+            headers.forEach { entry ->
+                notNullHeaders[entry.key] = entry.value
+            }
+        }
+        
+        (dataSourceFactory as DefaultHttpDataSource.Factory).setDefaultRequestProperties(notNullHeaders)
+        return dataSourceFactory
+    }
+
+    @JvmStatic
     fun isHTTP(uri: Uri?): Boolean {
         if (uri == null || uri.scheme == null) {
             return false
