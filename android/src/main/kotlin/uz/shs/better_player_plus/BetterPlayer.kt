@@ -119,13 +119,17 @@ internal class BetterPlayer(
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
         
+        // Create DefaultMediaSourceFactory with basic constructor
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(httpDataSourceFactory)
+        
         Log.d(TAG, "Initializing ExoPlayer with DefaultMediaSourceFactory and DefaultHttpDataSource")
         
         exoPlayer = ExoPlayer.Builder(context)
             .setTrackSelector(trackSelector)
             .setLoadControl(loadControl)
             .setRenderersFactory(DefaultRenderersFactory(context))
-            .setMediaSourceFactory(DefaultMediaSourceFactory(context, httpDataSourceFactory))
+            .setMediaSourceFactory(mediaSourceFactory)
             .build()
         workManager = WorkManager.getInstance(context)
         workerObserverMap = HashMap()
