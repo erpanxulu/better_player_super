@@ -435,7 +435,15 @@ internal class BetterPlayer(
             if (lastPathSegment == null) {
                 lastPathSegment = ""
             }
-            type = Util.inferContentTypeForExtension(lastPathSegment.split(".")[1])
+            // Check if URL has file extension before trying to access index 1
+            val pathParts = lastPathSegment.split(".")
+            if (pathParts.size > 1) {
+                type = Util.inferContentTypeForExtension(pathParts[1])
+            } else {
+                // No file extension, default to OTHER for HTTP/HTTPS URLs
+                Log.d(TAG, "No file extension found, defaulting to OTHER content type: ${uri.toString()}")
+                type = C.CONTENT_TYPE_OTHER
+            }
         } else {
             type = when (formatHint) {
                 FORMAT_SS -> C.CONTENT_TYPE_SS
