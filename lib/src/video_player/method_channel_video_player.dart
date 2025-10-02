@@ -257,7 +257,22 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
 
     if (milliseconds <= 0) return null;
 
-    return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    // Validate timestamp range to prevent RangeError
+    // Valid range for DateTime.fromMillisecondsSinceEpoch is -8640000000000000 to 8640000000000000
+    const int minValidTimestamp = -8640000000000000;
+    const int maxValidTimestamp = 8640000000000000;
+    
+    if (milliseconds < minValidTimestamp || milliseconds > maxValidTimestamp) {
+      BetterPlayerUtils.log('Invalid timestamp received from native side: $milliseconds');
+      return null;
+    }
+
+    try {
+      return DateTime.fromMillisecondsSinceEpoch(milliseconds);
+    } catch (e) {
+      BetterPlayerUtils.log('Error creating DateTime from timestamp $milliseconds: $e');
+      return null;
+    }
   }
 
   @override
