@@ -285,7 +285,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 null,
                 null, null, null,
                 null, // srtConfiguration - not needed for assets
-                null  // udpConfiguration - not needed for assets
+                null, // udpConfiguration - not needed for assets
+                null  // rtspConfiguration - not needed for assets
             )
         } else {
             val useCache = getParameter(dataSource, USE_CACHE_PARAMETER, false)
@@ -308,6 +309,9 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             // Handle UDP configuration if present
             val udpConfiguration = dataSource[UDP_CONFIGURATION_PARAMETER] as? Map<String, Any?>
             
+            // Handle RTSP configuration if present
+            val rtspConfiguration = dataSource[RTSP_CONFIGURATION_PARAMETER] as? Map<String, Any?>
+            
             player.setDataSource(
                 flutterState!!.applicationContext,
                 key,
@@ -324,7 +328,8 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 cacheKey,
                 clearKey,
                 srtConfiguration,
-                udpConfiguration
+                udpConfiguration,
+                rtspConfiguration
             )
         }
     }
@@ -553,6 +558,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val MIX_WITH_OTHERS_PARAMETER = "mixWithOthers"
         private const val SRT_CONFIGURATION_PARAMETER = "srtConfiguration"
     private const val UDP_CONFIGURATION_PARAMETER = "udpConfiguration"
+    private const val RTSP_CONFIGURATION_PARAMETER = "rtspConfiguration"
         const val URL_PARAMETER = "url"
         const val PRE_CACHE_SIZE_PARAMETER = "preCacheSize"
         const val MAX_CACHE_SIZE_PARAMETER = "maxCacheSize"

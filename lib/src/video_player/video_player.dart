@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:better_player_plus/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_srt_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_udp_configuration.dart';
+import 'package:better_player_plus/src/configuration/better_player_rtsp_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_video_format.dart';
 import 'package:better_player_plus/src/video_player/video_player_platform_interface.dart';
 import 'package:flutter/material.dart';
@@ -455,6 +456,39 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         overriddenDuration: overriddenDuration,
         activityName: activityName,
         udpConfiguration: udpConfiguration,
+      ),
+    );
+  }
+
+  /// Set data source for playing a video from RTSP (Real Time Streaming Protocol) stream.
+  ///
+  /// The RTSP URL for the video is given by the [dataSource] argument and must not be
+  /// null. RTSP URLs typically start with 'rtsp://' or 'rtsp://host:port/path'.
+  Future<void> setRtspDataSource(
+    String dataSource, {
+    Map<String, String?>? headers,
+    bool? showNotification,
+    String? title,
+    String? author,
+    String? imageUrl,
+    String? notificationChannelName,
+    Duration? overriddenDuration,
+    String? activityName,
+    BetterPlayerRtspConfiguration? rtspConfiguration,
+  }) {
+    return _setDataSource(
+      DataSource(
+        sourceType: DataSourceType.rtsp,
+        uri: dataSource,
+        headers: headers,
+        showNotification: showNotification,
+        title: title,
+        author: author,
+        imageUrl: imageUrl,
+        notificationChannelName: notificationChannelName,
+        overriddenDuration: overriddenDuration,
+        activityName: activityName,
+        rtspConfiguration: rtspConfiguration,
       ),
     );
   }

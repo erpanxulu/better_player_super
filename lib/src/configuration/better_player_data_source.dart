@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'better_player_cache_configuration.dart';
 import 'better_player_srt_configuration.dart';
 import 'better_player_udp_configuration.dart';
+import 'better_player_rtsp_configuration.dart';
 
 ///Representation of data source which will be played in Better Player. Allows
 ///to setup all necessary configuration connected to video source.
@@ -84,6 +85,9 @@ class BetterPlayerDataSource {
   ///UDP-specific configuration for UDP streaming
   final BetterPlayerUdpConfiguration? udpConfiguration;
 
+  ///RTSP-specific configuration for RTSP streaming
+  final BetterPlayerRtspConfiguration? rtspConfiguration;
+
   BetterPlayerDataSource(
     this.type,
     this.url, {
@@ -109,14 +113,16 @@ class BetterPlayerDataSource {
     this.bufferingConfiguration = const BetterPlayerBufferingConfiguration(),
     this.srtConfiguration,
     this.udpConfiguration,
+    this.rtspConfiguration,
   }) : assert(
             (type == BetterPlayerDataSourceType.network ||
                     type == BetterPlayerDataSourceType.file ||
                     type == BetterPlayerDataSourceType.srt ||
-                    type == BetterPlayerDataSourceType.udp) ||
+                    type == BetterPlayerDataSourceType.udp ||
+                    type == BetterPlayerDataSourceType.rtsp) ||
                 (type == BetterPlayerDataSourceType.memory &&
                     bytes?.isNotEmpty == true),
-            "Url can't be null in network, file, srt, or udp data source | bytes can't be null when using memory data source");
+            "Url can't be null in network, file, srt, udp, or rtsp data source | bytes can't be null when using memory data source");
 
   ///Factory method to build SRT data source which uses url as data source
   ///Bytes parameter is not used in this data source.
@@ -201,6 +207,49 @@ class BetterPlayerDataSource {
       placeholder: placeholder,
       bufferingConfiguration: bufferingConfiguration,
       udpConfiguration: udpConfiguration,
+    );
+  }
+
+  ///Factory method to build RTSP data source which uses url as data source
+  ///Bytes parameter is not used in this data source.
+  factory BetterPlayerDataSource.rtsp(
+    String url, {
+    List<BetterPlayerSubtitlesSource>? subtitles,
+    bool? liveStream,
+    Map<String, String>? headers,
+    bool? useAsmsSubtitles,
+    bool? useAsmsTracks,
+    bool? useAsmsAudioTracks,
+    Map<String, String>? qualities,
+    BetterPlayerCacheConfiguration? cacheConfiguration,
+    BetterPlayerNotificationConfiguration notificationConfiguration =
+        const BetterPlayerNotificationConfiguration(showNotification: false),
+    Duration? overriddenDuration,
+    BetterPlayerVideoFormat? videoFormat,
+    BetterPlayerDrmConfiguration? drmConfiguration,
+    Widget? placeholder,
+    BetterPlayerBufferingConfiguration bufferingConfiguration =
+        const BetterPlayerBufferingConfiguration(),
+    BetterPlayerRtspConfiguration? rtspConfiguration,
+  }) {
+    return BetterPlayerDataSource(
+      BetterPlayerDataSourceType.rtsp,
+      url,
+      subtitles: subtitles,
+      liveStream: liveStream,
+      headers: headers,
+      useAsmsSubtitles: useAsmsSubtitles,
+      useAsmsTracks: useAsmsTracks,
+      useAsmsAudioTracks: useAsmsAudioTracks,
+      resolutions: qualities,
+      cacheConfiguration: cacheConfiguration,
+      notificationConfiguration: notificationConfiguration,
+      overriddenDuration: overriddenDuration,
+      videoFormat: videoFormat,
+      drmConfiguration: drmConfiguration,
+      placeholder: placeholder,
+      bufferingConfiguration: bufferingConfiguration,
+      rtspConfiguration: rtspConfiguration,
     );
   }
 
@@ -325,6 +374,9 @@ class BetterPlayerDataSource {
     Widget? placeholder,
     BetterPlayerBufferingConfiguration? bufferingConfiguration =
         const BetterPlayerBufferingConfiguration(),
+    BetterPlayerSrtConfiguration? srtConfiguration,
+    BetterPlayerUdpConfiguration? udpConfiguration,
+    BetterPlayerRtspConfiguration? rtspConfiguration,
   }) {
     return BetterPlayerDataSource(
       type ?? this.type,
@@ -347,6 +399,9 @@ class BetterPlayerDataSource {
       placeholder: placeholder ?? this.placeholder,
       bufferingConfiguration:
           bufferingConfiguration ?? this.bufferingConfiguration,
+      srtConfiguration: srtConfiguration ?? this.srtConfiguration,
+      udpConfiguration: udpConfiguration ?? this.udpConfiguration,
+      rtspConfiguration: rtspConfiguration ?? this.rtspConfiguration,
     );
   }
 }

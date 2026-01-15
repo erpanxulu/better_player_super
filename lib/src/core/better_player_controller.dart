@@ -537,6 +537,25 @@ class BetterPlayerController {
         );
         break;
 
+      case BetterPlayerDataSourceType.rtsp:
+        await videoPlayerController?.setRtspDataSource(
+          betterPlayerDataSource.url,
+          headers: _getHeaders(),
+          showNotification: _betterPlayerDataSource
+              ?.notificationConfiguration?.showNotification,
+          title: _betterPlayerDataSource?.notificationConfiguration?.title,
+          author: _betterPlayerDataSource?.notificationConfiguration?.author,
+          imageUrl:
+              _betterPlayerDataSource?.notificationConfiguration?.imageUrl,
+          notificationChannelName: _betterPlayerDataSource
+              ?.notificationConfiguration?.notificationChannelName,
+          overriddenDuration: _betterPlayerDataSource!.overriddenDuration,
+          activityName:
+              _betterPlayerDataSource?.notificationConfiguration?.activityName,
+          rtspConfiguration: _betterPlayerDataSource!.rtspConfiguration,
+        );
+        break;
+
       case BetterPlayerDataSourceType.memory:
         final file = await _createFile(_betterPlayerDataSource!.bytes!,
             extension: _betterPlayerDataSource!.videoExtension);

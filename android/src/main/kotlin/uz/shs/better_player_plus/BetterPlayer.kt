@@ -65,6 +65,7 @@ import androidx.media3.exoplayer.drm.HttpMediaDrmCallback
 import androidx.media3.exoplayer.drm.LocalMediaDrmCallback
 import androidx.media3.exoplayer.drm.UnsupportedDrmException
 import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.rtsp.RtspMediaSource
 import androidx.media3.exoplayer.smoothstreaming.DefaultSsChunkSource
 import androidx.media3.exoplayer.smoothstreaming.SsMediaSource
 import androidx.media3.exoplayer.source.ClippingMediaSource
@@ -152,7 +153,8 @@ internal class BetterPlayer(
         cacheKey: String?,
         clearKey: String?,
         srtConfiguration: Map<String, Any?>?,
-        udpConfiguration: Map<String, Any?>?
+        udpConfiguration: Map<String, Any?>?,
+        rtspConfiguration: Map<String, Any?>?
     ) {
         this.key = key
         isInitialized = false
@@ -218,6 +220,11 @@ internal class BetterPlayer(
             Log.d(TAG, "UDP configuration: $udpConfiguration")
         }
         
+        // Handle RTSP configuration
+        if (formatHint == FORMAT_RTSP && rtspConfiguration != null) {
+            Log.d(TAG, "RTSP configuration: $rtspConfiguration")
+        }
+        
         // PENTING: Handle SRT URLs specially
         if (formatHint == FORMAT_SRT) {
             // For SRT, we don't need to set dataSourceFactory here
@@ -226,6 +233,10 @@ internal class BetterPlayer(
         } else if (formatHint == FORMAT_UDP) {
             // For UDP, we don't need to set dataSourceFactory here
             // It will be handled in buildMediaSource with BetterPlayerUdpDataSource
+            dataSourceFactory = null
+        } else if (formatHint == FORMAT_RTSP) {
+            // For RTSP, we don't need to set dataSourceFactory here
+            // It will be handled in buildMediaSource with RtspMediaSource
             dataSourceFactory = null
         } else if (isHTTP(uri)) {
             dataSourceFactory = getDataSourceFactory(userAgent, headers)
@@ -240,7 +251,7 @@ internal class BetterPlayer(
         } else {
             dataSourceFactory = DefaultDataSource.Factory(context)
         }
-        val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context, srtConfiguration, udpConfiguration)
+        val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context, srtConfiguration, udpConfiguration, rtspConfiguration)
         if (overriddenDuration != 0L) {
             val clippingMediaSource = ClippingMediaSource(mediaSource, 0, overriddenDuration * 1000)
             exoPlayer?.setMediaSource(clippingMediaSource)
@@ -427,7 +438,8 @@ internal class BetterPlayer(
         cacheKey: String?,
         context: Context,
         srtConfiguration: Map<String, Any?>? = null,
-        udpConfiguration: Map<String, Any?>? = null
+        udpConfiguration: Map<String, Any?>? = null,
+        rtspConfiguration: Map<String, Any?>? = null
     ): MediaSource {
         val type: Int
         if (formatHint == null) {
@@ -451,6 +463,7 @@ internal class BetterPlayer(
                 FORMAT_HLS -> C.CONTENT_TYPE_HLS
                 FORMAT_SRT -> CONTENT_TYPE_SRT
                 FORMAT_UDP -> CONTENT_TYPE_UDP
+                FORMAT_RTSP -> CONTENT_TYPE_RTSP
                 FORMAT_OTHER -> C.CONTENT_TYPE_OTHER
                 else -> -1
             }
@@ -525,6 +538,38 @@ internal class BetterPlayer(
                     udpDataSource.acquireMulticastLock()
                 }
                 udpDataSource.buildUdpMediaSource(uri.toString())
+            }
+
+            CONTENT_TYPE_RTSP -> {
+                val timeoutMs = rtspConfiguration?.get("timeoutMs") as? Int ?: 10000
+                val forceUseRtpTcp = rtspConfiguration?.get("forceUseRtpTcp") as? Boolean ?: false
+                
+                // Build RTSP URI with authentication if provided
+                var rtspUri = uri
+                val username = rtspConfiguration?.get("username") as? String
+                val password = rtspConfiguration?.get("password") as? String
+                if (username != null && password != null) {
+                    val uriString = uri.toString()
+                    val scheme = uri.scheme
+                    val authority = "$username:$password@${uri.authority}"
+                    val path = uri.path
+                    val query = uri.query
+                    val fragment = uri.fragment
+                    val newUriString = buildString {
+                        append(scheme)
+                        append("://")
+                        append(authority)
+                        if (path != null) append(path)
+                        if (query != null) append("?$query")
+                        if (fragment != null) append("#$fragment")
+                    }
+                    rtspUri = Uri.parse(newUriString)
+                }
+                
+                androidx.media3.exoplayer.rtsp.RtspMediaSource.Factory()
+                    .setTimeoutMs(timeoutMs)
+                    .setForceUseRtpTcp(forceUseRtpTcp)
+                    .createMediaSource(MediaItem.Builder().setUri(rtspUri).build())
             }
 
             C.CONTENT_TYPE_OTHER -> {
@@ -872,6 +917,7 @@ internal class BetterPlayer(
         private const val FORMAT_HLS = "hls"
         private const val FORMAT_SRT = "srt"
     private const val FORMAT_UDP = "udp"
+        private const val FORMAT_RTSP = "rtsp"
         private const val FORMAT_OTHER = "other"
         private const val DEFAULT_NOTIFICATION_CHANNEL = "better_player_channel"
         private const val NOTIFICATION_ID = 1
@@ -945,6 +991,7 @@ internal class BetterPlayer(
         // Custom content type for SRT since Media3 doesn't have one built-in
         private const val CONTENT_TYPE_SRT = 100
     private const val CONTENT_TYPE_UDP = 101
+        private const val CONTENT_TYPE_RTSP = 102
     }
 
 }

@@ -152,6 +152,25 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           'udpConfiguration': dataSource.udpConfiguration?.toMap(),
         };
         break;
+      case DataSourceType.rtsp:
+        dataSourceDescription = <String, dynamic>{
+          'key': dataSource.key,
+          'uri': dataSource.uri,
+          'formatHint': 'rtsp',
+          'headers': dataSource.headers,
+          'useCache': false,
+          'maxCacheSize': 0,
+          'maxCacheFileSize': 0,
+          'showNotification': dataSource.showNotification,
+          'title': dataSource.title,
+          'author': dataSource.author,
+          'imageUrl': dataSource.imageUrl,
+          'notificationChannelName': dataSource.notificationChannelName,
+          'overriddenDuration': dataSource.overriddenDuration?.inMilliseconds,
+          'activityName': dataSource.activityName,
+          'rtspConfiguration': dataSource.rtspConfiguration?.toMap(),
+        };
+        break;
     }
     await _channel.invokeMethod<void>(
       'setDataSource',
