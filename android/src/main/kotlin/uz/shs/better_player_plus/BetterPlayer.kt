@@ -726,7 +726,18 @@ internal class BetterPlayer(
                     val windowStartTimeMs =
                         timeline.getWindow(0, Timeline.Window()).windowStartTimeMs
                     val pos = exoPlayer?.currentPosition ?: 0L
-                    return windowStartTimeMs + pos
+                    val result = windowStartTimeMs + pos
+                    
+                    // Validate timestamp range to prevent RangeError
+                    // Valid range for DateTime.fromMillisecondsSinceEpoch is -8640000000000000 to 8640000000000000
+                    val minValidTimestamp = -8640000000000000L
+                    val maxValidTimestamp = 8640000000000000L
+                    
+                    return if (result in minValidTimestamp..maxValidTimestamp) {
+                        result
+                    } else {
+                        0L // Return 0 to indicate no absolute position available
+                    }
                 }
             }
             return exoPlayer?.currentPosition ?: 0L
