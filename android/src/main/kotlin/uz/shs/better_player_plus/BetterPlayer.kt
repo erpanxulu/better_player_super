@@ -541,7 +541,7 @@ internal class BetterPlayer(
             }
 
             CONTENT_TYPE_RTSP -> {
-                val timeoutMs = rtspConfiguration?.get("timeoutMs") as? Int ?: 10000
+                val timeoutMs = (rtspConfiguration?.get("timeoutMs") as? Number)?.toLong() ?: 10000L
                 val forceUseRtpTcp = rtspConfiguration?.get("forceUseRtpTcp") as? Boolean ?: false
                 
                 // Build RTSP URI with authentication if provided
