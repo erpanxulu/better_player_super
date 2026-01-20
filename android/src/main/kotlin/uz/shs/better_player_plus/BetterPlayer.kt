@@ -42,6 +42,7 @@ import androidx.work.Data
 import androidx.media3.*
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.AdViewProvider
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -76,7 +77,6 @@ import androidx.media3.exoplayer.source.ClippingMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import androidx.media3.exoplayer.source.ads.AdViewProvider
 import androidx.media3.exoplayer.source.ads.AdsLoader
 import androidx.media3.exoplayer.source.ads.AdsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -646,9 +646,7 @@ internal class BetterPlayer(
                 contentMediaSource,
                 DataSpec(adUri),
                 adsLoader,
-                adViewProvider,
-                Handler(Looper.getMainLooper()),
-                null
+                adViewProvider
             )
         }
 
