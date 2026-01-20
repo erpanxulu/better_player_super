@@ -1016,9 +1016,8 @@ internal class BetterPlayer(
         if (adViewProvider == null) {
             val container = ensureAdUiContainer(context)
             adViewProvider = object : AdViewProvider {
-                override fun getAdViewGroup(): ViewGroup {
-                    return container
-                }
+                override val adViewGroup: ViewGroup
+                    get() = container
             }
         }
         return adViewProvider!!
