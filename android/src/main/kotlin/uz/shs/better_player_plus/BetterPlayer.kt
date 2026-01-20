@@ -76,6 +76,7 @@ import androidx.media3.exoplayer.source.ClippingMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.source.ads.AdViewProvider
 import androidx.media3.exoplayer.source.ads.AdsLoader
 import androidx.media3.exoplayer.source.ads.AdsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -117,7 +118,7 @@ internal class BetterPlayer(
     private var lastSendBufferedPosition = 0L
     private var adsLoader: AdsLoader? = null
     private var adUiContainer: FrameLayout? = null
-    private var adViewProvider: AdsLoader.AdViewProvider? = null
+    private var adViewProvider: AdViewProvider? = null
     private var adUiContainerFromRegistry: Boolean = false
     private var adsEnabled: Boolean = false
     private var adsDebugMode: Boolean = false
@@ -645,7 +646,9 @@ internal class BetterPlayer(
                 contentMediaSource,
                 DataSpec(adUri),
                 adsLoader,
-                adViewProvider
+                adViewProvider,
+                Handler(Looper.getMainLooper()),
+                null
             )
         }
 
@@ -1009,10 +1012,10 @@ internal class BetterPlayer(
         return adsLoader!!
     }
 
-    private fun ensureAdViewProvider(context: Context): AdsLoader.AdViewProvider {
+    private fun ensureAdViewProvider(context: Context): AdViewProvider {
         if (adViewProvider == null) {
             val container = ensureAdUiContainer(context)
-            adViewProvider = object : AdsLoader.AdViewProvider {
+            adViewProvider = object : AdViewProvider {
                 override fun getAdViewGroup(): ViewGroup {
                     return container
                 }

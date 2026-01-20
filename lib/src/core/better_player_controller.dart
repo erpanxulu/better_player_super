@@ -476,8 +476,8 @@ class BetterPlayerController {
           adsEnabled: _betterPlayerDataSource?.adsConfiguration?.enabled,
           adsDebugMode: _betterPlayerDataSource?.adsConfiguration?.debugMode,
           adsStrictMode: _betterPlayerDataSource?.adsConfiguration?.strictMode,
-          adsStreamType: _betterPlayerDataSource?.adsConfiguration?.streamType
-              .name,
+          adsStreamType:
+              _betterPlayerDataSource?.adsConfiguration?.streamType.name,
           adsContentSourceId:
               _betterPlayerDataSource?.adsConfiguration?.contentSourceId,
           adsVideoId: _betterPlayerDataSource?.adsConfiguration?.videoId,
