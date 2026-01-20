@@ -642,11 +642,19 @@ internal class BetterPlayer(
             val adUri = Uri.parse(adTagUrl)
             val adViewProvider = ensureAdViewProvider(context)
             val adsLoader = ensureAdsLoader(context)
+            val adsMediaSourceFactory = DefaultMediaSourceFactory(context)
+                .setDataSourceFactory(mediaDataSourceFactory ?: DefaultDataSource.Factory(context))
+            if (drmSessionManagerProvider != null) {
+                adsMediaSourceFactory.setDrmSessionManagerProvider(drmSessionManagerProvider!!)
+            }
             return AdsMediaSource(
                 contentMediaSource,
                 DataSpec(adUri),
                 adsLoader,
-                adViewProvider
+                adsMediaSourceFactory,
+                adViewProvider,
+                Handler(Looper.getMainLooper()),
+                null
             )
         }
 
@@ -1014,8 +1022,9 @@ internal class BetterPlayer(
         if (adViewProvider == null) {
             val container = ensureAdUiContainer(context)
             adViewProvider = object : AdViewProvider {
-                override val adViewGroup: ViewGroup
-                    get() = container
+                override fun getAdViewGroup(): ViewGroup {
+                    return container
+                }
             }
         }
         return adViewProvider!!
