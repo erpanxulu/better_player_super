@@ -472,6 +472,16 @@ class BetterPlayerController {
               _betterPlayerDataSource?.notificationConfiguration?.activityName,
           clearKey: _betterPlayerDataSource?.drmConfiguration?.clearKey,
           videoExtension: _betterPlayerDataSource!.videoExtension,
+          adTagUrl: _betterPlayerDataSource?.adsConfiguration?.adTagUrl,
+          adsEnabled: _betterPlayerDataSource?.adsConfiguration?.enabled,
+          adsDebugMode: _betterPlayerDataSource?.adsConfiguration?.debugMode,
+          adsStrictMode: _betterPlayerDataSource?.adsConfiguration?.strictMode,
+          adsStreamType: _betterPlayerDataSource?.adsConfiguration?.streamType
+              .name,
+          adsContentSourceId:
+              _betterPlayerDataSource?.adsConfiguration?.contentSourceId,
+          adsVideoId: _betterPlayerDataSource?.adsConfiguration?.videoId,
+          adsAssetKey: _betterPlayerDataSource?.adsConfiguration?.assetKey,
         );
 
         break;
@@ -1223,6 +1233,15 @@ class BetterPlayerController {
         break;
       case VideoEventType.bufferingEnd:
         _postEvent(BetterPlayerEvent(BetterPlayerEventType.bufferingEnd));
+        break;
+      case VideoEventType.adStart:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.adStart));
+        break;
+      case VideoEventType.adEnd:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.adEnd));
+        break;
+      case VideoEventType.adError:
+        _postEvent(BetterPlayerEvent(BetterPlayerEventType.adError));
         break;
       default:
 

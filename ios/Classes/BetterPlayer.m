@@ -28,6 +28,10 @@ AVPictureInPictureController *_pipController;
     _disposed = false;
     _player = [[AVPlayer alloc] init];
     _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+    _adsEnabled = false;
+    _adsDebugMode = false;
+    _adsStrictMode = false;
+    _adsStreamType = @"clientSide";
     ///Fix for loading large videos
     if (@available(iOS 10.0, *)) {
         _player.automaticallyWaitsToMinimizeStalling = false;
@@ -37,9 +41,21 @@ AVPictureInPictureController *_pipController;
 }
 
 - (nonnull UIView *)view {
-    BetterPlayerView *playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
-    playerView.player = _player;
-    return playerView;
+    if (!self.playerView) {
+        self.playerView = [[BetterPlayerView alloc] initWithFrame:CGRectZero];
+        self.playerView.player = _player;
+        self.adContainerView = [[UIView alloc] initWithFrame:CGRectZero];
+        self.adContainerView.backgroundColor = [UIColor clearColor];
+        self.adContainerView.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.playerView addSubview:self.adContainerView];
+        [NSLayoutConstraint activateConstraints:@[
+            [self.adContainerView.topAnchor constraintEqualToAnchor:self.playerView.topAnchor],
+            [self.adContainerView.bottomAnchor constraintEqualToAnchor:self.playerView.bottomAnchor],
+            [self.adContainerView.leadingAnchor constraintEqualToAnchor:self.playerView.leadingAnchor],
+            [self.adContainerView.trailingAnchor constraintEqualToAnchor:self.playerView.trailingAnchor]
+        ]];
+    }
+    return self.playerView;
 }
 
 - (void)addObservers:(AVPlayerItem*)item {
@@ -74,6 +90,7 @@ AVPictureInPictureController *_pipController;
     _disposed = false;
     _failedCount = 0;
     _key = nil;
+    [self releaseAds];
     if (_player.currentItem == nil) {
         return;
     }
@@ -195,6 +212,27 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     return [self setDataSourceURL:[NSURL fileURLWithPath:path] withKey:key withCertificateUrl:certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders: @{} withCache: false cacheKey:cacheKey cacheManager:cacheManager overriddenDuration:overriddenDuration videoExtension: nil];
 }
 
+- (void)configureAdsWithAdTagUrl:(NSString*)adTagUrl
+                     adsEnabled:(BOOL)adsEnabled
+                    adsDebugMode:(BOOL)adsDebugMode
+                   adsStrictMode:(BOOL)adsStrictMode
+                   adsStreamType:(NSString*)adsStreamType
+              adsContentSourceId:(NSString*)adsContentSourceId
+                       adsVideoId:(NSString*)adsVideoId
+                       adsAssetKey:(NSString*)adsAssetKey {
+    _adsEnabled = adsEnabled;
+    _adsDebugMode = adsDebugMode;
+    _adsStrictMode = adsStrictMode;
+    _adsStreamType = adsStreamType ?: @"clientSide";
+    _adTagUrl = adTagUrl;
+    _adsContentSourceId = adsContentSourceId;
+    _adsVideoId = adsVideoId;
+    _adsAssetKey = adsAssetKey;
+    if (!adsEnabled) {
+        [self releaseAds];
+    }
+}
+
 - (void)setDataSourceURL:(NSURL*)url withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders:(NSDictionary*)headers withCache:(BOOL)useCache cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int) overriddenDuration videoExtension: (NSString*) videoExtension{
     _overriddenDuration = 0;
     if (headers == [NSNull null] || headers == NULL){
@@ -228,7 +266,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     if (@available(iOS 10.0, *) && overriddenDuration > 0) {
         _overriddenDuration = overriddenDuration;
     }
-    return [self setDataSourcePlayerItem:item withKey:key];
+    [self setDataSourcePlayerItem:item withKey:key];
+    [self setupAdsIfNeededForUrl:url];
+    return;
 }
 
 - (void)setDataSourcePlayerItem:(AVPlayerItem*)item withKey:(NSString*)key{
@@ -275,6 +315,182 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     if (_isStalledCheckStarted){
         return;
     }
+
+- (void)setupAdsIfNeededForUrl:(NSURL*)contentUrl {
+    if (!_adsEnabled) {
+        [self releaseAds];
+        return;
+    }
+    if (_adsStreamType == nil) {
+        _adsStreamType = @"clientSide";
+    }
+    [self ensureAdsLoader];
+    if ([self isDaiVod]) {
+        if (_adsContentSourceId.length == 0 || _adsVideoId.length == 0) {
+            [self sendAdErrorEvent:@"Missing DAI VOD contentSourceId/videoId"];
+            return;
+        }
+        IMAStreamRequest *request = [[IMAVODStreamRequest alloc]
+                                     initWithContentSourceID:_adsContentSourceId
+                                     videoID:_adsVideoId
+                                     adDisplayContainer:[self ensureAdDisplayContainer]
+                                     userContext:nil];
+        [_adsLoader requestStreamWithRequest:request];
+        return;
+    }
+    if ([self isDaiLive]) {
+        if (_adsAssetKey.length == 0) {
+            [self sendAdErrorEvent:@"Missing DAI Live assetKey"];
+            return;
+        }
+        IMAStreamRequest *request = [[IMALiveStreamRequest alloc]
+                                     initWithAssetKey:_adsAssetKey
+                                     adDisplayContainer:[self ensureAdDisplayContainer]
+                                     userContext:nil];
+        [_adsLoader requestStreamWithRequest:request];
+        return;
+    }
+    if (_adTagUrl.length == 0) {
+        [self sendAdErrorEvent:@"Missing adTagUrl"];
+        return;
+    }
+    self.contentPlayhead = [[IMAAVPlayerContentPlayhead alloc] initWithAVPlayer:self.player];
+    IMAAdsRequest *request =
+    [[IMAAdsRequest alloc] initWithAdTagUrl:_adTagUrl
+                         adDisplayContainer:[self ensureAdDisplayContainer]
+                            contentPlayhead:self.contentPlayhead
+                                userContext:nil];
+    [_adsLoader requestAdsWithRequest:request];
+}
+
+- (void)ensureAdsLoader {
+    if (_adsLoader != nil) {
+        return;
+    }
+    IMASettings *settings = [[IMASettings alloc] init];
+    settings.enableDebugMode = _adsDebugMode;
+    _adsLoader = [[IMAAdsLoader alloc] initWithSettings:settings];
+    _adsLoader.delegate = self;
+}
+
+- (IMAAdDisplayContainer *)ensureAdDisplayContainer {
+    if (_adDisplayContainer != nil) {
+        return _adDisplayContainer;
+    }
+    UIViewController *viewController = [self adsViewController];
+    _adDisplayContainer = [[IMAAdDisplayContainer alloc] initWithAdContainer:self.adContainerView
+                                                             viewController:viewController];
+    return _adDisplayContainer;
+}
+
+- (UIViewController *)adsViewController {
+    UIViewController *rootController = [UIApplication sharedApplication].keyWindow.rootViewController;
+    UIViewController *presentedController = rootController;
+    while (presentedController.presentedViewController) {
+        presentedController = presentedController.presentedViewController;
+    }
+    return presentedController ?: rootController;
+}
+
+- (BOOL)isDaiVod {
+    return [_adsStreamType isEqualToString:@"daiVod"];
+}
+
+- (BOOL)isDaiLive {
+    return [_adsStreamType isEqualToString:@"daiLive"];
+}
+
+- (void)releaseAds {
+    if (_adsManager != nil) {
+        [_adsManager destroy];
+    }
+    _adsManager = nil;
+    if (_streamManager != nil) {
+        [_streamManager destroy];
+    }
+    _streamManager = nil;
+    _adDisplayContainer = nil;
+    _contentPlayhead = nil;
+}
+
+- (void)sendAdStartEvent {
+    if (_eventSink) {
+        _eventSink(@{@"event" : @"adStart", @"key" : _key});
+    }
+}
+
+- (void)sendAdEndEvent {
+    if (_eventSink) {
+        _eventSink(@{@"event" : @"adEnd", @"key" : _key});
+    }
+}
+
+- (void)sendAdErrorEvent:(NSString*)message {
+    if (_eventSink) {
+        _eventSink(@{@"event" : @"adError", @"key" : _key, @"message" : message ?: @""});
+    }
+    if (_adsStrictMode) {
+        [self pause];
+    }
+}
+
+#pragma mark - IMAAdsLoaderDelegate
+- (void)adsLoader:(IMAAdsLoader *)adsLoader adsLoadedWithData:(IMAAdsLoadedData *)adsLoadedData {
+    _adsManager = adsLoadedData.adsManager;
+    _adsManager.delegate = self;
+    [_adsManager initializeWithAdsRenderingSettings:nil];
+}
+
+- (void)adsLoader:(IMAAdsLoader *)adsLoader failedWithErrorData:(IMAAdLoadingErrorData *)adErrorData {
+    [self sendAdErrorEvent:adErrorData.adError.message];
+}
+
+- (void)adsLoader:(IMAAdsLoader *)adsLoader streamManagerLoaded:(IMAStreamManager *)streamManager {
+    _streamManager = streamManager;
+    _streamManager.delegate = self;
+    NSURL *streamUrl = nil;
+    if ([streamManager respondsToSelector:NSSelectorFromString(@"streamURL")]) {
+        streamUrl = [streamManager valueForKey:@"streamURL"];
+    }
+    if (streamUrl != nil) {
+        AVPlayerItem *item = [AVPlayerItem playerItemWithURL:streamUrl];
+        [self setDataSourcePlayerItem:item withKey:_key];
+    }
+}
+
+#pragma mark - IMAAdsManagerDelegate
+- (void)adsManager:(IMAAdsManager *)adsManager didReceiveAdEvent:(IMAAdEvent *)event {
+    if (event.type == IMAAdEventTypeStarted) {
+        [self sendAdStartEvent];
+    } else if (event.type == IMAAdEventTypeComplete || event.type == IMAAdEventTypeAllAdsCompleted) {
+        [self sendAdEndEvent];
+    }
+}
+
+- (void)adsManager:(IMAAdsManager *)adsManager didReceiveAdError:(IMAAdError *)error {
+    [self sendAdErrorEvent:error.message];
+}
+
+- (void)adsManagerDidRequestContentPause:(IMAAdsManager *)adsManager {
+    [_player pause];
+}
+
+- (void)adsManagerDidRequestContentResume:(IMAAdsManager *)adsManager {
+    [_player play];
+}
+
+#pragma mark - IMAStreamManagerDelegate
+- (void)streamManager:(IMAStreamManager *)streamManager didReceiveAdEvent:(IMAAdEvent *)event {
+    if (event.type == IMAAdEventTypeStarted) {
+        [self sendAdStartEvent];
+    } else if (event.type == IMAAdEventTypeComplete || event.type == IMAAdEventTypeAllAdsCompleted) {
+        [self sendAdEndEvent];
+    }
+}
+
+- (void)streamManager:(IMAStreamManager *)streamManager didReceiveAdError:(IMAAdError *)error {
+    [self sendAdErrorEvent:error.message];
+}
    _isStalledCheckStarted = true;
     [self startStalledCheck];
 }
@@ -744,6 +960,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
 /// so the channel is going to die or is already dead.
 - (void)disposeSansEventChannel {
     @try{
+        [self releaseAds];
         [self clear];
     }
     @catch(NSException *exception) {

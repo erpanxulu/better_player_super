@@ -60,6 +60,10 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             },
             binding.textureRegistry
         )
+        binding.platformViewRegistry.registerViewFactory(
+            "better_player_plus/ads_view",
+            BetterPlayerAdsViewFactory()
+        )
         flutterState?.startListening(this)
     }
 
@@ -118,7 +122,7 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 }
                 val player = BetterPlayer(
                     flutterState?.applicationContext!!, eventChannel, handle,
-                    customDefaultLoadControl, result
+                    activity, customDefaultLoadControl, result
                 )
                 videoPlayers.put(handle.id(), player)
             }
@@ -284,6 +288,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 overriddenDuration.toLong(),
                 null,
                 null, null, null,
+                null,
+                false,
+                false,
+                false,
+                null,
                 null, // srtConfiguration - not needed for assets
                 null, // udpConfiguration - not needed for assets
                 null  // rtspConfiguration - not needed for assets
@@ -302,6 +311,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
             val clearKey = getParameter<String?>(dataSource, DRM_CLEARKEY_PARAMETER, null)
             val drmHeaders: Map<String, String> =
                 getParameter(dataSource, DRM_HEADERS_PARAMETER, HashMap())
+            val adTagUrl = getParameter<String?>(dataSource, AD_TAG_URL_PARAMETER, null)
+            val adsEnabled = getParameter(dataSource, ADS_ENABLED_PARAMETER, false)
+            val adsDebugMode = getParameter(dataSource, ADS_DEBUG_MODE_PARAMETER, false)
+            val adsStrictMode = getParameter(dataSource, ADS_STRICT_MODE_PARAMETER, false)
+            val adsStreamType = getParameter<String?>(dataSource, ADS_STREAM_TYPE_PARAMETER, null)
             
             // Handle SRT configuration if present
             val srtConfiguration = dataSource[SRT_CONFIGURATION_PARAMETER] as? Map<String, Any?>
@@ -327,6 +341,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
                 drmHeaders,
                 cacheKey,
                 clearKey,
+                adTagUrl,
+                adsEnabled,
+                adsDebugMode,
+                adsStrictMode,
+                adsStreamType,
                 srtConfiguration,
                 udpConfiguration,
                 rtspConfiguration
@@ -555,6 +574,11 @@ class BetterPlayerPlugin : FlutterPlugin, ActivityAware, MethodCallHandler {
         private const val LICENSE_URL_PARAMETER = "licenseUrl"
         private const val DRM_HEADERS_PARAMETER = "drmHeaders"
         private const val DRM_CLEARKEY_PARAMETER = "clearKey"
+        private const val AD_TAG_URL_PARAMETER = "adTagUrl"
+        private const val ADS_ENABLED_PARAMETER = "adsEnabled"
+        private const val ADS_DEBUG_MODE_PARAMETER = "adsDebugMode"
+        private const val ADS_STRICT_MODE_PARAMETER = "adsStrictMode"
+        private const val ADS_STREAM_TYPE_PARAMETER = "adsStreamType"
         private const val MIX_WITH_OTHERS_PARAMETER = "mixWithOthers"
         private const val SRT_CONFIGURATION_PARAMETER = "srtConfiguration"
     private const val UDP_CONFIGURATION_PARAMETER = "udpConfiguration"

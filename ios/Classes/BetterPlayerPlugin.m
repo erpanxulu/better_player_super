@@ -310,6 +310,26 @@ bool _remoteCommandsInitialized = false;
             NSString* cacheKey = dataSource[@"cacheKey"];
             NSNumber* maxCacheSize = dataSource[@"maxCacheSize"];
             NSString* videoExtension = dataSource[@"videoExtension"];
+            NSString* adTagUrl = dataSource[@"adTagUrl"];
+            NSString* adsStreamType = dataSource[@"adsStreamType"];
+            NSString* adsContentSourceId = dataSource[@"adsContentSourceId"];
+            NSString* adsVideoId = dataSource[@"adsVideoId"];
+            NSString* adsAssetKey = dataSource[@"adsAssetKey"];
+            BOOL adsEnabled = false;
+            BOOL adsDebugMode = false;
+            BOOL adsStrictMode = false;
+            id adsEnabledObject = [dataSource objectForKey:@"adsEnabled"];
+            if (adsEnabledObject != [NSNull null]) {
+                adsEnabled = [[dataSource objectForKey:@"adsEnabled"] boolValue];
+            }
+            id adsDebugObject = [dataSource objectForKey:@"adsDebugMode"];
+            if (adsDebugObject != [NSNull null]) {
+                adsDebugMode = [[dataSource objectForKey:@"adsDebugMode"] boolValue];
+            }
+            id adsStrictObject = [dataSource objectForKey:@"adsStrictMode"];
+            if (adsStrictObject != [NSNull null]) {
+                adsStrictMode = [[dataSource objectForKey:@"adsStrictMode"] boolValue];
+            }
             
             int overriddenDuration = 0;
             if ([dataSource objectForKey:@"overriddenDuration"] != [NSNull null]){
@@ -328,6 +348,30 @@ bool _remoteCommandsInitialized = false;
             if (headers == [NSNull null] || headers == NULL){
                 headers = @{};
             }
+
+            if (adTagUrl == [NSNull null]) {
+                adTagUrl = nil;
+            }
+            if (adsStreamType == [NSNull null]) {
+                adsStreamType = nil;
+            }
+            if (adsContentSourceId == [NSNull null]) {
+                adsContentSourceId = nil;
+            }
+            if (adsVideoId == [NSNull null]) {
+                adsVideoId = nil;
+            }
+            if (adsAssetKey == [NSNull null]) {
+                adsAssetKey = nil;
+            }
+            [player configureAdsWithAdTagUrl:adTagUrl
+                                 adsEnabled:adsEnabled
+                                adsDebugMode:adsDebugMode
+                               adsStrictMode:adsStrictMode
+                               adsStreamType:adsStreamType
+                          adsContentSourceId:adsContentSourceId
+                                   adsVideoId:adsVideoId
+                                   adsAssetKey:adsAssetKey];
 
             if (assetArg) {
                 NSString* assetPath;

@@ -1,6 +1,7 @@
 package uz.shs.better_player_plus
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -29,6 +30,8 @@ import androidx.media3.ui.PlayerNotificationManager.BitmapCallback
 import androidx.work.OneTimeWorkRequest
 import android.util.Log
 import android.view.Surface
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Observer
 import androidx.media3.extractor.DefaultExtractorsFactory
@@ -50,6 +53,7 @@ import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.DataSpec
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -72,7 +76,10 @@ import androidx.media3.exoplayer.source.ClippingMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.source.ads.AdsLoader
+import androidx.media3.exoplayer.source.ads.AdsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.ima.ImaAdsLoader
 import java.io.File
 import java.lang.Exception
 import java.lang.IllegalStateException
@@ -84,6 +91,7 @@ internal class BetterPlayer(
     context: Context,
     private val eventChannel: EventChannel,
     private val textureEntry: SurfaceTextureEntry,
+    private val activity: Activity?,
     customDefaultLoadControl: CustomDefaultLoadControl?,
     result: MethodChannel.Result
 ) {
@@ -91,6 +99,7 @@ internal class BetterPlayer(
     private val eventSink = QueuingEventSink()
     private val trackSelector: DefaultTrackSelector = DefaultTrackSelector(context)
     private val loadControl: LoadControl
+    private val textureId: Long = textureEntry.id()
     private var isInitialized = false
     private var surface: Surface? = null
     private var key: String? = null
@@ -106,6 +115,14 @@ internal class BetterPlayer(
     private val customDefaultLoadControl: CustomDefaultLoadControl =
         customDefaultLoadControl ?: CustomDefaultLoadControl()
     private var lastSendBufferedPosition = 0L
+    private var adsLoader: AdsLoader? = null
+    private var adUiContainer: FrameLayout? = null
+    private var adViewProvider: AdsLoader.AdViewProvider? = null
+    private var adUiContainerFromRegistry: Boolean = false
+    private var adsEnabled: Boolean = false
+    private var adsDebugMode: Boolean = false
+    private var adsStrictMode: Boolean = false
+    private var lastIsPlayingAd: Boolean = false
 
     init {
         val loadBuilder = DefaultLoadControl.Builder()
@@ -152,11 +169,19 @@ internal class BetterPlayer(
         drmHeaders: Map<String, String>?,
         cacheKey: String?,
         clearKey: String?,
+        adTagUrl: String?,
+        adsEnabled: Boolean,
+        adsDebugMode: Boolean,
+        adsStrictMode: Boolean,
+        adsStreamType: String?,
         srtConfiguration: Map<String, Any?>?,
         udpConfiguration: Map<String, Any?>?,
         rtspConfiguration: Map<String, Any?>?
     ) {
         this.key = key
+        this.adsEnabled = adsEnabled
+        this.adsDebugMode = adsDebugMode
+        this.adsStrictMode = adsStrictMode
         isInitialized = false
         val uri = Uri.parse(dataSource)
         var dataSourceFactory: DataSource.Factory?
@@ -251,7 +276,29 @@ internal class BetterPlayer(
         } else {
             dataSourceFactory = DefaultDataSource.Factory(context)
         }
-        val mediaSource = buildMediaSource(uri, dataSourceFactory, formatHint, cacheKey, context, srtConfiguration, udpConfiguration, rtspConfiguration)
+
+        if (!adsEnabled) {
+            releaseAdsResources()
+        } else if (adsStreamType != null && adsStreamType != "clientSide") {
+            logAds("Ads stream type '$adsStreamType' is not supported on Android.")
+            releaseAdsResources()
+        } else if (!adTagUrl.isNullOrEmpty()) {
+            ensureAdsLoader(context).setPlayer(exoPlayer)
+        } else {
+            releaseAdsResources()
+        }
+
+        val mediaSource = buildMediaSource(
+            uri,
+            dataSourceFactory,
+            formatHint,
+            cacheKey,
+            context,
+            srtConfiguration,
+            udpConfiguration,
+            rtspConfiguration,
+            if (adsEnabled) adTagUrl else null
+        )
         if (overriddenDuration != 0L) {
             val clippingMediaSource = ClippingMediaSource(mediaSource, 0, overriddenDuration * 1000)
             exoPlayer?.setMediaSource(clippingMediaSource)
@@ -439,7 +486,8 @@ internal class BetterPlayer(
         context: Context,
         srtConfiguration: Map<String, Any?>? = null,
         udpConfiguration: Map<String, Any?>? = null,
-        rtspConfiguration: Map<String, Any?>? = null
+        rtspConfiguration: Map<String, Any?>? = null,
+        adTagUrl: String? = null
     ): MediaSource {
         val type: Int
         if (formatHint == null) {
@@ -479,7 +527,7 @@ internal class BetterPlayer(
             drmSessionManagerProvider = DrmSessionManagerProvider { drmSessionManager }
         }
 
-        return when (type) {
+        val contentMediaSource = when (type) {
             C.CONTENT_TYPE_SS -> {
                 requireNotNull(mediaDataSourceFactory) { "DataSource.Factory is required for SS content type" }
                 SsMediaSource.Factory(
@@ -588,6 +636,20 @@ internal class BetterPlayer(
                 throw IllegalStateException("Unsupported type: $type")
             }
         }
+
+        if (!adTagUrl.isNullOrEmpty()) {
+            val adUri = Uri.parse(adTagUrl)
+            val adViewProvider = ensureAdViewProvider(context)
+            val adsLoader = ensureAdsLoader(context)
+            return AdsMediaSource(
+                contentMediaSource,
+                DataSpec(adUri),
+                adsLoader,
+                adViewProvider
+            )
+        }
+
+        return contentMediaSource
     }
 
     private fun setupVideoPlayer(
@@ -638,9 +700,24 @@ internal class BetterPlayer(
                         //no-op
                     }
                 }
+                maybeSendAdStateChange()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                maybeSendAdStateChange()
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                if (exoPlayer?.isPlayingAd == true) {
+                    val event: MutableMap<String, Any?> = HashMap()
+                    event["event"] = "adError"
+                    event["key"] = key
+                    event["message"] = error.message
+                    eventSink.success(event)
+                    if (adsStrictMode) {
+                        exoPlayer?.playWhenReady = false
+                    }
+                }
                 eventSink.error("VideoError", "Video player had error $error", "")
             }
         })
@@ -895,7 +972,25 @@ internal class BetterPlayer(
         setAudioAttributes(exoPlayer, mixWithOthers)
     }
 
+    private fun maybeSendAdStateChange() {
+        val isPlayingAd = exoPlayer?.isPlayingAd == true
+        if (isPlayingAd != lastIsPlayingAd) {
+            lastIsPlayingAd = isPlayingAd
+            val event: MutableMap<String, Any?> = HashMap()
+            event["event"] = if (isPlayingAd) "adStart" else "adEnd"
+            event["key"] = key
+            eventSink.success(event)
+        }
+    }
+
+    private fun logAds(message: String) {
+        if (adsDebugMode) {
+            Log.d(TAG, message)
+        }
+    }
+
     fun dispose() {
+        releaseAdsResources()
         disposeMediaSession()
         disposeRemoteNotifications()
         if (isInitialized) {
@@ -905,6 +1000,69 @@ internal class BetterPlayer(
         eventChannel.setStreamHandler(null)
         surface?.release()
         exoPlayer?.release()
+    }
+
+    private fun ensureAdsLoader(context: Context): AdsLoader {
+        if (adsLoader == null) {
+            adsLoader = ImaAdsLoader.Builder(context).build()
+        }
+        return adsLoader!!
+    }
+
+    private fun ensureAdViewProvider(context: Context): AdsLoader.AdViewProvider {
+        if (adViewProvider == null) {
+            val container = ensureAdUiContainer(context)
+            adViewProvider = object : AdsLoader.AdViewProvider {
+                override fun getAdViewGroup(): ViewGroup {
+                    return container
+                }
+            }
+        }
+        return adViewProvider!!
+    }
+
+    private fun ensureAdUiContainer(context: Context): FrameLayout {
+        if (adUiContainer == null) {
+            val registryContainer = AdsOverlayRegistry.getAdViewGroup(textureId)
+            if (registryContainer is FrameLayout) {
+                adUiContainerFromRegistry = true
+                adUiContainer = registryContainer
+            } else if (registryContainer != null) {
+                adUiContainerFromRegistry = true
+                adUiContainer = FrameLayout(context).apply {
+                    addView(registryContainer)
+                }
+            } else {
+                val viewContext = activity ?: context
+                adUiContainer = FrameLayout(viewContext).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                }
+                val rootView = activity?.findViewById<ViewGroup>(android.R.id.content)
+                if (rootView != null) {
+                    activity?.runOnUiThread { rootView.addView(adUiContainer) }
+                } else {
+                    Log.w(TAG, "Ad UI container not attached: activity is null.")
+                }
+            }
+        }
+        return adUiContainer!!
+    }
+
+    private fun releaseAdsResources() {
+        adsLoader?.setPlayer(null)
+        adsLoader?.release()
+        adsLoader = null
+        adViewProvider = null
+        val container = adUiContainer
+        if (container != null && !adUiContainerFromRegistry) {
+            val parent = container.parent as? ViewGroup
+            parent?.removeView(container)
+        }
+        adUiContainerFromRegistry = false
+        adUiContainer = null
     }
 
     override fun equals(other: Any?): Boolean {

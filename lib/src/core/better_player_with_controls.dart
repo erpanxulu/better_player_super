@@ -9,6 +9,7 @@ import 'package:better_player_plus/src/core/better_player_utils.dart';
 import 'package:better_player_plus/src/subtitles/better_player_subtitles_drawer.dart';
 import 'package:better_player_plus/src/video_player/video_player.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BetterPlayerWithControls extends StatefulWidget {
   final BetterPlayerController? controller;
@@ -147,7 +148,31 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
           ),
           if (!placeholderOnTop) _buildPlaceholder(betterPlayerController),
           _buildControls(context, betterPlayerController),
+          _buildAdsOverlay(betterPlayerController),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAdsOverlay(BetterPlayerController betterPlayerController) {
+    final adsConfiguration =
+        betterPlayerController.betterPlayerDataSource?.adsConfiguration;
+    if (adsConfiguration == null || adsConfiguration.enabled != true) {
+      return const SizedBox();
+    }
+    if (!Platform.isAndroid) {
+      return const SizedBox();
+    }
+    final textureId =
+        betterPlayerController.videoPlayerController?.textureIdForAds;
+    if (textureId == null) {
+      return const SizedBox();
+    }
+    return Positioned.fill(
+      child: AndroidView(
+        viewType: 'better_player_plus/ads_view',
+        creationParams: {'textureId': textureId},
+        creationParamsCodec: const StandardMessageCodec(),
       ),
     );
   }

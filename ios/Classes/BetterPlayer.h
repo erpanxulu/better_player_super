@@ -7,6 +7,7 @@
 #import <AVKit/AVKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <GLKit/GLKit.h>
+#import <GoogleInteractiveMediaAds/GoogleInteractiveMediaAds.h>
 #import "BetterPlayerTimeUtils.h"
 #import "BetterPlayerView.h"
 #import "BetterPlayerEzDrmAssetsLoaderDelegate.h"
@@ -15,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class CacheManager;
 
-@interface BetterPlayer : NSObject <FlutterPlatformView, FlutterStreamHandler, AVPictureInPictureControllerDelegate>
+@interface BetterPlayer : NSObject <FlutterPlatformView, FlutterStreamHandler, AVPictureInPictureControllerDelegate, IMAAdsLoaderDelegate, IMAAdsManagerDelegate, IMAStreamManagerDelegate>
 @property(readonly, nonatomic) AVPlayer* player;
 @property(readonly, nonatomic) BetterPlayerEzDrmAssetsLoaderDelegate* loaderDelegate;
 @property(nonatomic) FlutterEventChannel* eventChannel;
@@ -35,6 +36,21 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic) float playerRate;
 @property(nonatomic) int overriddenDuration;
 @property(nonatomic) AVPlayerTimeControlStatus lastAvPlayerTimeControlStatus;
+@property(nonatomic) IMAAdsLoader* adsLoader;
+@property(nonatomic) IMAAdsManager* adsManager;
+@property(nonatomic) IMAStreamManager* streamManager;
+@property(nonatomic) IMAAdDisplayContainer* adDisplayContainer;
+@property(nonatomic) IMAAVPlayerContentPlayhead* contentPlayhead;
+@property(nonatomic) UIView* adContainerView;
+@property(nonatomic) BetterPlayerView* playerView;
+@property(nonatomic) BOOL adsEnabled;
+@property(nonatomic) BOOL adsDebugMode;
+@property(nonatomic) BOOL adsStrictMode;
+@property(nonatomic) NSString* adsStreamType;
+@property(nonatomic) NSString* adTagUrl;
+@property(nonatomic) NSString* adsContentSourceId;
+@property(nonatomic) NSString* adsVideoId;
+@property(nonatomic) NSString* adsAssetKey;
 - (void)play;
 - (void)pause;
 - (void)setIsLooping:(bool)isLooping;
@@ -47,6 +63,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)seekTo:(int)location;
 - (void)setDataSourceAsset:(NSString*)asset withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int) overriddenDuration;
 - (void)setDataSourceURL:(NSURL*)url withKey:(NSString*)key withCertificateUrl:(NSString*)certificateUrl withLicenseUrl:(NSString*)licenseUrl withHeaders:(NSDictionary*)headers withCache:(BOOL)useCache cacheKey:(NSString*)cacheKey cacheManager:(CacheManager*)cacheManager overriddenDuration:(int) overriddenDuration videoExtension: (NSString*) videoExtension;
+- (void)configureAdsWithAdTagUrl:(NSString*)adTagUrl
+                     adsEnabled:(BOOL)adsEnabled
+                    adsDebugMode:(BOOL)adsDebugMode
+                   adsStrictMode:(BOOL)adsStrictMode
+                   adsStreamType:(NSString*)adsStreamType
+              adsContentSourceId:(NSString*)adsContentSourceId
+                       adsVideoId:(NSString*)adsVideoId
+                       adsAssetKey:(NSString*)adsAssetKey;
 - (void)setVolume:(double)volume;
 - (void)setSpeed:(double)speed result:(FlutterResult)result;
 - (void) setAudioTrack:(NSString*) name index:(int) index;

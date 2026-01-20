@@ -231,6 +231,14 @@ class DataSource {
     this.activityName,
     this.clearKey,
     this.videoExtension,
+    this.adTagUrl,
+    this.adsEnabled,
+    this.adsDebugMode,
+    this.adsStrictMode,
+    this.adsStreamType,
+    this.adsContentSourceId,
+    this.adsVideoId,
+    this.adsAssetKey,
     this.srtConfiguration,
     this.udpConfiguration,
     this.rtspConfiguration,
@@ -313,6 +321,30 @@ class DataSource {
   final String? clearKey;
 
   final String? videoExtension;
+
+  /// VAST ad tag URL for Google IMA client-side ads (Android).
+  final String? adTagUrl;
+
+  /// Enable/disable ads for this data source.
+  final bool? adsEnabled;
+
+  /// Enable debug logs for ads.
+  final bool? adsDebugMode;
+
+  /// If true, stop content playback when ad playback fails.
+  final bool? adsStrictMode;
+
+  /// Stream type for IMA DAI (iOS only).
+  final String? adsStreamType;
+
+  /// DAI VOD content source ID (iOS only).
+  final String? adsContentSourceId;
+
+  /// DAI VOD video ID (iOS only).
+  final String? adsVideoId;
+
+  /// DAI Live asset key (iOS only).
+  final String? adsAssetKey;
 
   ///SRT-specific configuration for SRT streaming
   final BetterPlayerSrtConfiguration? srtConfiguration;
@@ -488,6 +520,15 @@ enum VideoEventType {
 
   /// Picture in picture mode has been dismissed
   pipStop,
+
+  /// Ad started.
+  adStart,
+
+  /// Ad ended.
+  adEnd,
+
+  /// Ad error.
+  adError,
 
   /// An unknown event has been received.
   unknown,

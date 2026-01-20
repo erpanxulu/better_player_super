@@ -95,6 +95,14 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           'activityName': dataSource.activityName,
           'clearKey': dataSource.clearKey,
           'videoExtension': dataSource.videoExtension,
+          'adTagUrl': dataSource.adTagUrl,
+          'adsEnabled': dataSource.adsEnabled,
+          'adsDebugMode': dataSource.adsDebugMode,
+          'adsStrictMode': dataSource.adsStrictMode,
+          'adsStreamType': dataSource.adsStreamType,
+          'adsContentSourceId': dataSource.adsContentSourceId,
+          'adsVideoId': dataSource.adsVideoId,
+          'adsAssetKey': dataSource.adsAssetKey,
         };
         break;
       case DataSourceType.file:
@@ -478,6 +486,24 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
         case 'pipStop':
           return VideoEvent(
             eventType: VideoEventType.pipStop,
+            key: key,
+          );
+
+        case 'adStart':
+          return VideoEvent(
+            eventType: VideoEventType.adStart,
+            key: key,
+          );
+
+        case 'adEnd':
+          return VideoEvent(
+            eventType: VideoEventType.adEnd,
+            key: key,
+          );
+
+        case 'adError':
+          return VideoEvent(
+            eventType: VideoEventType.adError,
             key: key,
           );
 

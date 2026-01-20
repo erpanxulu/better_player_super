@@ -1,3 +1,4 @@
+import 'package:better_player_plus/src/configuration/better_player_ads_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_buffering_configuration.dart';
 import 'package:better_player_plus/src/configuration/better_player_data_source_type.dart';
 import 'package:better_player_plus/src/configuration/better_player_drm_configuration.dart';
@@ -69,6 +70,9 @@ class BetterPlayerDataSource {
   ///Configuration of content protection
   final BetterPlayerDrmConfiguration? drmConfiguration;
 
+  ///Configuration of client-side ads (Google IMA).
+  final BetterPlayerAdsConfiguration? adsConfiguration;
+
   ///Placeholder widget which will be shown until video load or play. This
   ///placeholder may be useful if you want to show placeholder before each video
   ///in playlist. Otherwise, you should use placeholder from
@@ -109,6 +113,7 @@ class BetterPlayerDataSource {
     this.videoFormat,
     this.videoExtension,
     this.drmConfiguration,
+    this.adsConfiguration,
     this.placeholder,
     this.bufferingConfiguration = const BetterPlayerBufferingConfiguration(),
     this.srtConfiguration,
@@ -270,6 +275,7 @@ class BetterPlayerDataSource {
     Duration? overriddenDuration,
     BetterPlayerVideoFormat? videoFormat,
     BetterPlayerDrmConfiguration? drmConfiguration,
+    BetterPlayerAdsConfiguration? adsConfiguration,
     Widget? placeholder,
     BetterPlayerBufferingConfiguration bufferingConfiguration =
         const BetterPlayerBufferingConfiguration(),
@@ -289,6 +295,7 @@ class BetterPlayerDataSource {
       overriddenDuration: overriddenDuration,
       videoFormat: videoFormat,
       drmConfiguration: drmConfiguration,
+      adsConfiguration: adsConfiguration,
       placeholder: placeholder,
       bufferingConfiguration: bufferingConfiguration,
     );
@@ -371,6 +378,7 @@ class BetterPlayerDataSource {
     BetterPlayerVideoFormat? videoFormat,
     String? videoExtension,
     BetterPlayerDrmConfiguration? drmConfiguration,
+    BetterPlayerAdsConfiguration? adsConfiguration,
     Widget? placeholder,
     BetterPlayerBufferingConfiguration? bufferingConfiguration =
         const BetterPlayerBufferingConfiguration(),
@@ -396,6 +404,7 @@ class BetterPlayerDataSource {
       videoFormat: videoFormat ?? this.videoFormat,
       videoExtension: videoExtension ?? this.videoExtension,
       drmConfiguration: drmConfiguration ?? this.drmConfiguration,
+      adsConfiguration: adsConfiguration ?? this.adsConfiguration,
       placeholder: placeholder ?? this.placeholder,
       bufferingConfiguration:
           bufferingConfiguration ?? this.bufferingConfiguration,

@@ -201,6 +201,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   @visibleForTesting
   int? get textureId => _textureId;
 
+  /// Texture id used by native ads overlay on Android.
+  int? get textureIdForAds => _textureId;
+
   /// Attempts to open the given [dataSource] and load metadata about the video.
   Future<void> _create() async {
     _textureId = await _videoPlayerPlatform.create(
@@ -255,6 +258,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case VideoEventType.pipStop:
           value = value.copyWith(isPip: false);
+          break;
+        case VideoEventType.adStart:
+        case VideoEventType.adEnd:
+        case VideoEventType.adError:
           break;
         case VideoEventType.unknown:
           break;
@@ -339,6 +346,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     String? activityName,
     String? clearKey,
     String? videoExtension,
+    String? adTagUrl,
+    bool? adsEnabled,
+    bool? adsDebugMode,
+    bool? adsStrictMode,
+    String? adsStreamType,
+    String? adsContentSourceId,
+    String? adsVideoId,
+    String? adsAssetKey,
   }) {
     return _setDataSource(
       DataSource(
@@ -362,6 +377,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         activityName: activityName,
         clearKey: clearKey,
         videoExtension: videoExtension,
+        adTagUrl: adTagUrl,
+        adsEnabled: adsEnabled,
+        adsDebugMode: adsDebugMode,
+        adsStrictMode: adsStrictMode,
+        adsStreamType: adsStreamType,
+        adsContentSourceId: adsContentSourceId,
+        adsVideoId: adsVideoId,
+        adsAssetKey: adsAssetKey,
       ),
     );
   }
