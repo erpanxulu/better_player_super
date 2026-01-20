@@ -650,11 +650,10 @@ internal class BetterPlayer(
             return AdsMediaSource(
                 contentMediaSource,
                 DataSpec(adUri),
-                adsLoader,
+                adTagUrl ?: "better_player_ads",
                 adsMediaSourceFactory,
-                adViewProvider,
-                Handler(Looper.getMainLooper()),
-                null
+                adsLoader,
+                adViewProvider
             )
         }
 
